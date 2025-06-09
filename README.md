@@ -38,7 +38,7 @@ A machine learning-powered web application that classifies emails and SMS messag
 
 ## 🎥 Demo
 
-![Spam Classifier Demo](https://via.placeholder.com/800x400?text=Spam+Classifier+Demo)
+![Spam Classifier Demo](/Dashboard.png)
 
 ### How to Use:
 
