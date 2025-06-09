@@ -1,25 +1,34 @@
 import streamlit as st
 import pickle
 import string
-from nltk.corpus import stopwords
 import nltk
+from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
+import os
 
-# Download required NLTK data
-@st.cache_data
-def download_nltk_data():
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt')
-    
-    try:
-        nltk.data.find('corpora/stopwords')
-    except LookupError:
-        nltk.download('stopwords')
+# Force download NLTK data
+import ssl
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
-# Call the download function
-download_nltk_data()
+# Download NLTK data
+@st.cache_resource
+def init_nltk():
+    try:
+        nltk.download('punkt', quiet=True)
+        nltk.download('stopwords', quiet=True)
+        return True
+    except Exception as e:
+        st.error(f"Error downloading NLTK data: {e}")
+        return False
+
+# Initialize NLTK
+if not init_nltk():
+    st.stop()
 
 ps = PorterStemmer()
 
@@ -47,15 +56,20 @@ def transform_text(text):
 
     return " ".join(y)
 
-# Load models with error handling
-try:
-    tfidf = pickle.load(open('vectorizer1.pkl','rb'))
-    model = pickle.load(open('svc.pkl','rb'))
-except FileNotFoundError:
-    st.error("Model files not found. Please ensure vectorizer1.pkl and svc.pkl are in the repository.")
-    st.stop()
-except Exception as e:
-    st.error(f"Error loading models: {str(e)}")
+# Load models
+@st.cache_resource
+def load_models():
+    try:
+        tfidf = pickle.load(open('vectorizer1.pkl','rb'))
+        model = pickle.load(open('svc.pkl','rb'))
+        return tfidf, model
+    except Exception as e:
+        st.error(f"Error loading models: {e}")
+        return None, None
+
+tfidf, model = load_models()
+
+if tfidf is None or model is None:
     st.stop()
 
 st.title("Email/SMS Spam Classifier")
@@ -63,17 +77,22 @@ st.title("Email/SMS Spam Classifier")
 input_sms = st.text_area("Enter the message")
 
 if st.button('Predict'):
-    if input_sms:  # Check if input is not empty
-        # 1. preprocess
-        transformed_sms = transform_text(input_sms)
-        # 2. vectorize
-        vector_input = tfidf.transform([transformed_sms]).toarray()
-        # 3. predict
-        result = model.predict(vector_input)[0]
-        # 4. Display
-        if result == 1:
-            st.header("Spam")
-        else:
-            st.header("Not Spam")
+    if input_sms.strip():
+        try:
+            # 1. preprocess
+            transformed_sms = transform_text(input_sms)
+            # 2. vectorize
+            vector_input = tfidf.transform([transformed_sms]).toarray()
+            # 3. predict
+            result = model.predict(vector_input)[0]
+            # 4. Display
+            if result == 1:
+                st.header("🚫 Spam")
+                st.error("This message appears to be spam!")
+            else:
+                st.header("✅ Not Spam")
+                st.success("This message appears to be legitimate!")
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
     else:
         st.warning("Please enter a message to classify.")
