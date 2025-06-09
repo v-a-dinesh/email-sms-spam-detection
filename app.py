@@ -19,7 +19,7 @@ else:
 @st.cache_resource
 def init_nltk():
     try:
-        nltk.download('punkt', quiet=True)
+        nltk.download('punkt_tab', quiet=True)
         nltk.download('stopwords', quiet=True)
         return True
     except Exception as e:
