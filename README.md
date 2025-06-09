@@ -80,7 +80,7 @@ Hi John, just wanted to remind you about our meeting tomorrow at 3 PM. See you t
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/email-sms-spam-detection.git
+   git clone https://github.com/v-a-dinesh/email-sms-spam-detection.git
    cd email-sms-spam-detection
    ```
 
